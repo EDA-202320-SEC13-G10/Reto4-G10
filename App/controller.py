@@ -25,8 +25,7 @@ import model
 import time
 import csv
 import tracemalloc
-import json
-
+import json 
 """
 El controlador se encarga de mediar entre la vista y el modelo.
 """
@@ -42,18 +41,16 @@ def new_controller():
 
 
 # Funciones para la carga de datos
+def mostrardatos(control):
+    return model.mostrar_datos(control)
+def load_data (control, filename_v,filename_a,filename_e,filename_cm):
 
-def load_data(control, filename):
-    """
-    Carga los datos del reto
-    """
-    # TODO: Realizar la carga de datos
-    load_Vertices(control, filename)
-    load_estacion (control, filename)
-    load_comparendos(control,filename)
-    load_Arcos(control, filename)
+    load_Vertices(control, filename_v)   
+    load_estacion (control, filename_e)
+    load_comparendos(control,filename_cm)
+    load_Arcos(control, filename_a)
     return control
-    
+
 def load_Vertices(control, filename):
     """
     Carga los datos del reto
@@ -83,23 +80,24 @@ def load_Arcos(control, filename):
             if not arcos:
                 centinela = False
             else:
-                vertice = vertice.split()
-                model.add_data(control,vertice)
+                arcos = arcos.split()
+                model.addConnection(control,arcos)
     f.close()
 
 def load_estacion (control, filename):
-    f = open(filename , "r")
-    data = json.loads(f.read())
-    for i in data["features"]:
-        model.addEstacion(control,i)
-    f.close()
+    estaciones = cf.data_dir + filename
+    input_file = csv.DictReader(open(estaciones,encoding="utf8"),
+                                delimiter=",")
+    for estacion in input_file:
+        model.addEstacion(control,estacion)
 
 def load_comparendos(control,filename):
-    f = open(filename , "r")
-    data = json.loads(f.read())
-    for i in data["features"]:
-        model.addEstacion(control,i)
-    f.close()
+    comparendos = cf.data_dir + filename
+    input_file = csv.DictReader(open(comparendos,encoding="utf8"),
+                                delimiter=",")
+    for comparendo in input_file:
+        model.addComparendos(control,comparendo)
+
 
 def sort(control):
     """
@@ -119,12 +117,12 @@ def get_data(control, id):
     pass
 
 
-def req_1(control):
+def req_1(control,m):
     """
     Retorna el resultado del requerimiento 1
     """
     # TODO: Modificar el requerimiento 1
-    pass
+    return model.req_6(control,m)
 
 
 def req_2(control):

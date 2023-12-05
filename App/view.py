@@ -27,6 +27,7 @@ from DISClib.ADT import list as lt
 from DISClib.ADT import stack as st
 from DISClib.ADT import queue as qu
 from DISClib.ADT import map as mp
+from DISClib.ADT import  orderedmap as om
 from DISClib.DataStructures import mapentry as me
 assert cf
 from tabulate import tabulate
@@ -38,14 +39,17 @@ Presenta el menu de opciones y por cada seleccion
 se hace la solicitud al controlador para ejecutar la
 operación solicitada
 """
-
+filename_arco = "Data/tickets/bogota_arcos.txt"
+filename_vertices = "Data/tickets/bogota_vertices.txt"
+filename_comparendos = "tickets//comparendos_2019_bogota_vertices.csv"
+filename_Estaciones = "tickets//estacionpolicia_bogota_vertices.csv"
 
 def new_controller():
     """
         Se crea una instancia del controlador
     """
     #TODO: Llamar la función del controlador donde se crean las estructuras de datos
-    pass
+    return controller.new_controller()
 
 
 def print_menu():
@@ -67,9 +71,12 @@ def load_data(control):
     Carga los datos
     """
     #TODO: Realizar la carga de datos
-    pass
+    
+    controller.load_data(control,filename_vertices,filename_arco,filename_Estaciones,filename_comparendos)
 
 
+
+11
 def print_data(control, id):
     """
         Función que imprime un dato dado su ID
@@ -81,12 +88,17 @@ def print_req_1(control):
     """
         Función que imprime la solución del Requerimiento 1 en consola
     """
+    
     # TODO: Imprimir el resultado del requerimiento 1
-    pass
+    v_i = controller.req_1(control,20)
+    print(v_i)
+    
 
 
 def print_req_2(control):
-    """
+    """1
+    111
+
         Función que imprime la solución del Requerimiento 2 en consola
     """
     # TODO: Imprimir el resultado del requerimiento 2

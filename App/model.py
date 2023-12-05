@@ -67,20 +67,38 @@ def new_data_structs():
     #TODO: Inicializar las estructuras de datos
     try:
         analyzer = {
-            "arcos" : None,
+           
             "vertices" : None,
             "connections" : None,
-            "comparendos": None,
+            "connections_o_hash" : None,
             "mapDatos": None,
+            "mapEstaciones": None,
+            "mapLocalidades": None, 
+
             "lista_presentacion_estaccion": None,
             "lista_presentacion_comparendos": None,
+
+            "s_req1": None,
+            "s_req2": None,
+            "s_req3": None
         }
         analyzer['connections'] = gr.newGraph(datastructure='ADJ_LIST',
                                               directed=True,
                                               size=456091)
+        analyzer['connections_o_hash'] = gr.newGraph(datastructure='ADJ_LIST',
+                                              directed=True,
+                                              size=456091)
+        analyzer['connections_o_comp'] = gr.newGraph(datastructure='ADJ_LIST',
+                                              directed=True,
+                                              size=456091)
+        
         analyzer["mapDatos"] = om.newMap()
-        analyzer["lista_presentacion_estaccion"] = lt.newList()
-        analyzer["lista_presentacion_comparendos"] = lt.newList()
+        analyzer["mapEstaciones"] = om.newMap()
+        analyzer["mapLocalidades"] = om.newMap()
+
+        analyzer["vertices"] = lt.newList("ARRAY_LIST")
+        analyzer["lista_presentacion_estaccion"] = lt.newList("ARRAY_LIST")
+        analyzer["lista_presentacion_comparendos"] = lt.newList("ARRAY_LIST")
        
     except Exception as exp:
         error.reraise(exp, 'model:newAnalyzer')
@@ -89,23 +107,41 @@ def new_data_structs():
 
 
 # Funciones para agregar informacion al modelo
+
+
+    #TODO: Crear la función para agregar elementos a una lista
+    
+def propiedades(analyzer): 
+    num_vertices = gr.numVertices(analyzer["connections"])
+    num_arcos = gr.numEdges(analyzer["connections"])
+    return num_vertices,num_arcos
+
 def add_verices(analyzer, ticket):
     """
     Funcion que crea los vertices y agrega las estaciones
     al hash para hacer mas facil su recorrido
     """
-    id_Estacion = ticket[0]
+    d = {
+        "N_vertice" :  ticket[0],
+        "lat" :  ticket[2],
+        "long" :  ticket[1],
+    }
+    lt.addLast(analyzer["vertices"],d)
+    numero_malla = str(ticket[0])
 
     lat = ticket[2]
     long = ticket[1]
-    entry = om.get(analyzer["mapDatos"],id_Estacion)
+    entry = om.get(analyzer["mapDatos"],numero_malla)
     if entry is None:
-        estacion_entry = new_Estacion(float(lat),float(long))
-        om.put(analyzer["mapDatos"],id_Estacion,estacion_entry)
+        estacion_entry = new_Malla_vial(float(lat),float(long))
+        om.put(analyzer["mapDatos"],numero_malla,estacion_entry)
     
-    if not gr.containsVertex(analyzer['connections'],id_Estacion):
-        gr.insertVertex(analyzer['connections'],id_Estacion)
+    if not gr.containsVertex(analyzer['connections'],numero_malla):
+        gr.insertVertex(analyzer['connections'],numero_malla)
+        gr.insertVertex(analyzer['connections_o_hash'],numero_malla)
+        
     return analyzer
+
 
 def addConnection(analyzer,ltsConennctions):
 
@@ -124,60 +160,79 @@ def addConnection(analyzer,ltsConennctions):
                 h_final = valor_f["ubi"]
                 hsn = haversine(h_initial,h_final)
                 edge = gr.addEdge(analyzer["connections"],initial,final,hsn)
-                n_comparendos = valor_i["Numeros_comparendos"] + valor_f["Numeros_comparendos"]
+                gr.addEdge(analyzer["connections_o_hash"],initial,final,hsn)
+                gr.addEdge(analyzer["connections_o_hash"],final,initial,hsn)
+                n_comparendos = lt.size(valor_i["comparendos"]) + lt.size(valor_f["comparendos"]) 
                 edge = gr.addEdge(analyzer["connections"],final,initial,n_comparendos)
+                
+                gr.addEdge(analyzer["connections_o_comp"],final,initial,n_comparendos)
+                gr.addEdge(analyzer["connections_o_comp"],initial,final,n_comparendos)
+
     return analyzer
 
 def addEstacion(analyzer, estacion):
-    entry = om.get(analyzer["mapDatos"],estacion["properties"]["OBJECTID"])
+    mp_estaciones = analyzer["mapEstaciones"]
+    d = {
+        "ID" : estacion["OBJECTID"],
+        "N-Estacion" : estacion["EPONOMBRE"],
+        "LATITUD" : estacion["EPOLATITUD"],
+        "LONGITUD" : estacion["EPOLONGITU"],
+        "DESCRIPCION" : estacion["EPODESCRIP"],
+        "DIRECCION" : estacion["EPODIR_SITIO"],
+        "TIPO_SERVICIO" : estacion["EPOSERVICIO"],
+        "HORARIO" : estacion["EPOHORARIO"],
+        "TELEFONO" : estacion["EPOTELEFON"],
+        "CORREO" : estacion["EPOCELECTR"]
+    }
+    lt.addLast(analyzer["lista_presentacion_estaccion"],d)
+    entry = om.get(mp_estaciones,estacion["OBJECTID"])
+    entry_hash = om.get(analyzer["mapDatos"],estacion["VERTICES"])
     if entry is None:
-        lat = estacion["geometry"]["coordinates"][1]
-        long = estacion["geometry"]["coordinates"][0]
-        estacion_entry = new_Estacion(float(lat),float(long))
-        om.put(analyzer["mapDatos"],estacion["properties"]["OBJECTID"],estacion_entry)
-    else:
-        entry["value"]["propiedades"] = estacion["properties"]
+        estacion_entry = new_Estacion()
+        estacion_entry["propiedades"] = estacion
+        om.put(analyzer["mapEstaciones"],estacion["OBJECTID"],estacion_entry)
+    if entry_hash is not None:
+        om.get(mp_estaciones,estacion["OBJECTID"])["value"]["Estaciones_cercanas"] = estacion
     return analyzer
 
+
 def addComparendos(analyzer,comparendo):
-    keys = om.keySet(analyzer["mapDatos"])
-    comparendo = comparendo["properties"]
-    distancia = None
-    id_menor = None
+    d = {
+        "ID" : comparendo["OBJECTID"],
+        "LATITUD" : comparendo["LATITUD"],
+        "LONGITUD" : comparendo["LONGITUD"],
+        "FECHA_HORA" : comparendo["FECHA_HORA"],
+        "MEDIO_DETECCION" : comparendo["MEDIO_DETECCION"],
+        "CLASE_VEHICULO" : comparendo["CLASE_VEHICULO"],
+        "TIPO_SERVICIO" : comparendo["TIPO_SERVICIO"],
+        "INFRACCION" : comparendo["INFRACCION"],
+        "DESCRIPCION" : comparendo["DES_INFRACCION"],
+        "LOCALIDAD" : comparendo["LOCALIDAD"],
+        "VERTICES" : comparendo["VERTICES"]
+    }
+    lt.addLast(analyzer["lista_presentacion_comparendos"],d)
+
+    valor = om.get(analyzer["mapDatos"],comparendo["VERTICES"])
+    if valor is not None:
+        lt.addLast(valor["value"]["comparendos"],comparendo)
     
-    for key in lt.iterator(keys):
-        valor = om.get(analyzer["mapDatos"],key)
-        h_valor = valor["ubi"]
-        h_comparendo = ( comparendo["properties"]["LATITUD"] , comparendo["properties"]["LONGITUD"] )
-        haversine_nuevo  =haversine(h_valor,h_comparendo)
-        if distancia == None:
-            distancia = haversine_nuevo
-            id_menor = key
-        else:
-            if distancia > haversine_nuevo:
-                distancia = haversine_nuevo
-                id_menor = key
-    valor = om.get(analyzer["mapDatos"],id_menor)
-    valor["value"]["Numeros_comparendos"] += 1
-    lt.addLast(valor["value"]["comparendos"],comparendo["properties"])
 
 
-def new_Estacion(lat,long):
+def new_Malla_vial(lat,long):
     entry = {
         "ubi" : (lat,long),
         "propiedades" : None,
         "comparendos" : lt.newList(),
-        "Numeros_comparendos" : 0
+        "Estaciones_cercanas" : {}
+
     }
     return entry
 
-def add_data(data_structs, data):
-    """
-    Función para agregar nuevos elementos a la lista
-    """
-    #TODO: Crear la función para agregar elementos a una lista
-    pass
-
+def new_Estacion():
+    entry = {
+        "propiedades" : None
+        }
+    return entry
 
 # Funciones para creacion de datos
 
@@ -188,8 +243,32 @@ def new_data(id, info):
     #TODO: Crear la función para estructurar los datos
     pass
 
+def data_sizel(data_structs):
+    """
+    Retorna el tamaño de la lista de datos
+    """
+    return lt.size(data_structs) 
 
-# Funciones de consulta
+def sublista(data_structs, pos_i, num):
+    s =  lt.subList(data_structs, pos_i, num)
+    return s
+
+def first_last5(data_structs):
+    primeros = sublista(data_structs,1,5)
+    ultimos = sublista(data_structs,data_sizel(data_structs)-4,5)
+    for i in lt.iterator(ultimos):
+        lt.addLast(primeros,i)
+    return primeros
+
+def mostrar_datos(analyzer):
+
+    sizecomparendo = lt.size(analyzer["lista_presentacion_comparendos"])
+    l_presentarC = first_last5(analyzer["lista_presentacion_comparendos"])
+    sizeestaciones = lt.size(analyzer["lista_presentacion_estaccion"])
+    l_presentarE = first_last5(analyzer["lista_presentacion_estaccion"])
+    nm = gr.numVertices(analyzer["connections"])
+    l_presentarV = first_last5(analyzer["vertices"])
+    return sizecomparendo,l_presentarC,sizeestaciones,l_presentarE,nm,l_presentarV
 
 def get_data(data_structs, id):
     """
@@ -198,7 +277,6 @@ def get_data(data_structs, id):
     #TODO: Crear la función para obtener un dato de una lista
     pass
 
-
 def data_size(data_structs):
     """
     Retorna el tamaño de la lista de datos
@@ -206,30 +284,147 @@ def data_size(data_structs):
     #TODO: Crear la función para obtener el tamaño de una lista
     pass
 
+def vertices_mas_cercanos(map,lat,long,lat1,long1):
 
-def req_1(data_structs):
+    """ Se usa para recorre cada verticee de la malla vial para poder determinar
+     el vertice inicial y el vertice final """
+    key_Menor = None
+    distancia = None
+    key_Menor1 = None
+    distancia1 = None
+    lista_key = om.keySet(map)
+    h_valor = (lat,long)
+    h_valor1 = (lat1,long1)
+    for i in lt.iterator(lista_key):
+        
+        valor = (om.get(map,i))["value"]["ubi"]
+        distancia_h = haversine(valor,h_valor)
+        if key_Menor == None and distancia == None:
+            distancia = distancia_h
+            key_Menor = i
+        elif distancia > distancia_h:
+            distancia = distancia_h
+            key_Menor = i
+        distancia_h1 = haversine(valor,h_valor1)
+        if key_Menor1 == None and distancia1 == None:
+            distancia1 = distancia_h1
+            key_Menor1 = i
+        elif distancia1 > distancia_h1:
+            distancia1 = distancia_h1
+            key_Menor1 = i
+    return key_Menor, key_Menor1
+
+def distancia_secuencia(analyzer,pila):
+    numero_anteior = None
+    datos = lt.newList("ARRAY_LIST")
+
+    distancia  = 0
+    centinela = st.isEmpty(pila)
+    while centinela == False:
+        numero = st.pop(pila)
+        if numero_anteior ==None:
+            numero_anteior = numero
+        else:
+            
+              lt.addLast(datos,numero)
+        centinela = st.isEmpty(pila)
+
+    numero = None
+    numero_anterior_lista = None
+    for i in lt.iterator(datos):
+        numero = i
+        if numero_anterior_lista ==None:
+            numero_anterior_lista =  numero
+        else:
+            arco = gr.getEdge(analyzer,numero_anterior_lista,numero)
+            if type(arco["weight"]) == int:
+                arco = gr.getEdge(analyzer,numero,numero_anterior_lista)
+            
+            distancia += arco["weight"]
+        numero_anterior_lista =  numero
+        
+    return datos,distancia
+
+def req_1(analyzer,lat_i,long_i,lat_f,long_f):
     """
     Función que soluciona el requerimiento 1
     """
     # TODO: Realizar el requerimiento 1
-    pass
+    vertice_i, vertice_f= vertices_mas_cercanos(analyzer["mapDatos"],lat_i,long_i,lat_f,long_f)
+    analyzer["s_req1"] =  bfs.BreathFirstSearch(analyzer["connections"],vertice_i)
+    if bfs.hasPathTo(analyzer['s_req1'],vertice_f) == True:
+        pila =  bfs.pathTo(analyzer["s_req1"],vertice_f)
+    datos,d = distancia_secuencia(analyzer["connections"],pila)
+    size = lt.size(datos)
+    return datos,d, size
 
-
-def req_2(data_structs):
+def req_2(analyzer,lat_i,long_i,lat_f,long_f):
     """
     Función que soluciona el requerimiento 2
     """
     # TODO: Realizar el requerimiento 2
-    pass
-
-
-def req_3(data_structs):
+    vertice_i, vertice_f= vertices_mas_cercanos(analyzer["mapDatos"],lat_i,long_i,lat_f,long_f)
+    analyzer["s_req2"] =  bfs.BreathFirstSearch(analyzer["connections"],vertice_i)
+    if bfs.hasPathTo(analyzer['s_req2'],vertice_f) == True:
+        pila =  bfs.pathTo(analyzer["s_req1"],vertice_f)
+    datos,d = distancia_secuencia(analyzer["connections"],pila)
+    size = lt.size(datos)
+    return datos,d, size
+    
+def req_3(analyzer, localidad, M):
     """
     Función que soluciona el requerimiento 3
     """
     # TODO: Realizar el requerimiento 3
-    pass
+    identifyu = lt.newList("ARRAY_LIST")
+    lista = lt.newList("ARRAY_LIST")
+    lista1 = lt.newList("ARRAY_LIST")
+    d = {
+    }
+    for i in lt.iterator(analyzer["lista_presentacion_comparendos"]):
+        if i["LOCALIDAD"] == localidad:
+            if i["VERTICES"] not in d:
+                d[i["VERTICES"]] = 1
+            else:
+                d[i["VERTICES"]] +=1
+    
+    for i in d.keys():
+        l = {"vertice" : i,
+             "n_comparendos" : d[i]
+             }
+        lt.addLast(lista,l)
+    
 
+    y = merg.sort(lista,sort_criteria)
+    sublista = lt.subList(y,0,M)
+    
+    for i in lt.iterator(sublista):
+        lt.addLast(lista1,i["vertice"])
+    sublista1 = lt.subList(lista1,0,M)    
+    sublista1 = sublista1
+    distancia_total = 0
+    numero = None
+    numero_anterior_lista = None
+    for i in lt.iterator(sublista1):
+        if type(i) != int:
+            numero = i
+            if numero_anterior_lista ==None:
+                numero_anterior_lista =  numero
+            else:
+                analyzer["s_req3"] =  djk.Dijkstra(analyzer["connections_o_hash"],numero_anterior_lista)
+                if djk.hasPathTo(analyzer['s_req3'],numero) == True:
+                    pila =  djk.pathTo(analyzer["s_req3"],numero)
+                    datos,d = distancia_secuencia(analyzer["connections_o_hash"],pila)
+                    distancia_total += d
+                    for y in lt.iterator(datos):
+                        o = lt.isPresent(sublista1,y)
+                        lt.addLast(identifyu,y)
+                        if o != 0:
+                            lt.changeInfo(sublista1,o,0)
+                    
+        numero_anterior_lista =  numero
+
+    return  analyzer["s_req3"]
 
 def req_4(data_structs):
     """
@@ -239,20 +434,59 @@ def req_4(data_structs):
     pass
 
 
-def req_5(data_structs):
+def req_5(analyzer):
     """
     Función que soluciona el requerimiento 5
     """
     # TODO: Realizar el requerimiento 5
-    pass
+    menor_lat = 100
+    mayor_lat = 0 
+    menor_long = 100
+    mayor_long = 0 
+    for i in lt.iterator(analyzer["lista_presentacion_comparendos"]):
+        if i["LATITUD"] > mayor_lat:
+            mayor_lat = i["LATITUD"]
+        if i["LATITUD"] < menor_lat:
+            menor_lat = i["LATITUD"]
+        if i["LONGITUD"] > mayor_long:
+            mayor_long = i["LONGITUD"]
+        if i["LONGITUD"] < menor_long:
+            menor_long = i["LONGITUD"]
+    
 
 
-def req_6(data_structs):
+def req_6(analyzer,m):
     """
     Función que soluciona el requerimiento 6
     """
     # TODO: Realizar el requerimiento 6
-    pass
+    menor_lat = 100
+    mayor_lat = 0 
+    menor_long = 100
+    mayor_long = 0 
+    for i in lt.iterator(analyzer["lista_presentacion_comparendos"]):
+        lat = float(i["LATITUD"])
+        long = abs(float(i["LONGITUD"]))
+        if  lat > mayor_lat:
+            mayor_lat = lat
+        if lat < menor_lat:
+            menor_lat = lat
+        if long > mayor_long:
+            mayor_long =long
+        if long < menor_long:
+            menor_long = long
+    y = analyzer["lista_presentacion_comparendos"]
+    l =["Público","Oficial","Particular"]
+    listas =[]
+    for i in l:
+        u = lt.newList()
+        for m in lt.iterator(y):
+            if m["TIPO_SERVICIO"] == i:
+                lt.addLast(u,m)
+        listas.append(u)
+
+
+    return merg.sort((listas[0]),compare)
 
 
 def req_7(data_structs):
@@ -278,7 +512,13 @@ def compare(data_1, data_2):
     Función encargada de comparar dos datos
     """
     #TODO: Crear función comparadora de la lista
-    pass
+
+    return data_1["INFRACCION"] < data_2["INFRACCION"]
+
+    
+   
+        
+        
 
 # Funciones de ordenamiento
 
@@ -294,7 +534,9 @@ def sort_criteria(data_1, data_2):
         _type_: _description_
     """
     #TODO: Crear función comparadora para ordenar
-    pass
+
+    return data_1["n_comparendos"] > data_2["n_comparendos"]
+
 
 
 def sort(data_structs):
