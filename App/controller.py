@@ -25,6 +25,7 @@ import model
 import time
 import csv
 import tracemalloc
+import json
 
 """
 El controlador se encarga de mediar entre la vista y el modelo.

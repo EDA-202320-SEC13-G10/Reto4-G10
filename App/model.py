@@ -46,6 +46,9 @@ from DISClib.Algorithms.Sorting import insertionsort as ins
 from DISClib.Algorithms.Sorting import selectionsort as se
 from DISClib.Algorithms.Sorting import mergesort as merg
 from DISClib.Algorithms.Sorting import quicksort as quk
+from DISClib.Utils import error as error
+from haversine import haversine, Unit
+
 assert cf
 
 """
