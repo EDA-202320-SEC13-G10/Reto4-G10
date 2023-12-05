@@ -477,16 +477,15 @@ def req_6(analyzer,m):
             menor_long = long
     y = analyzer["lista_presentacion_comparendos"]
     l =["Público","Oficial","Particular"]
-    listas =[]
-    for i in l:
-        u = lt.newList()
-        for m in lt.iterator(y):
-            if m["TIPO_SERVICIO"] == i:
-                lt.addLast(u,m)
-        listas.append(u)
+    
+    u = lt.newList()
+    for m in lt.iterator(y):
+        if m["TIPO_SERVICIO"] == l[0]:
+            lt.addLast(u,m)
+       
 
 
-    return merg.sort((listas[0]),compare)
+    return quk.sort(u,compare)
 
 
 def req_7(data_structs):
