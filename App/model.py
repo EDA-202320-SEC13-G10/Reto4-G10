@@ -80,7 +80,9 @@ def new_data_structs():
 
             "s_req1": None,
             "s_req2": None,
-            "s_req3": None
+            "s_req3": None,
+            "s_req4": None,
+            "s_req5": None
         }
         analyzer['connections'] = gr.newGraph(datastructure='ADJ_LIST',
                                               directed=True,
@@ -376,13 +378,121 @@ def req_3(analyzer, localidad, M):
     Función que soluciona el requerimiento 3
     """
     # TODO: Realizar el requerimiento 3
-    identifyu = lt.newList("ARRAY_LIST")
     lista = lt.newList("ARRAY_LIST")
     lista1 = lt.newList("ARRAY_LIST")
     d = {
     }
     for i in lt.iterator(analyzer["lista_presentacion_comparendos"]):
         if i["LOCALIDAD"] == localidad:
+            if i["VERTICES"] not in d:
+                d[i["VERTICES"]] = 1
+            else:
+                d[i["VERTICES"]] +=1
+    
+    for i in d.keys():
+        l = {"vertice" : i,
+             "n_comparendos" : d[i]
+             }
+        lt.addLast(lista,l)
+    
+
+    y = merg.sort(lista,sort_criteria)
+    sublista = lt.subList(y,0,M)
+    
+    for i in lt.iterator(sublista):
+        lt.addLast(lista1,i["vertice"])
+    sublista1 = lt.subList(lista1,0,M)    
+    distancia_total = 0
+    numero = None
+    numero_base = lt.getElement(sublista1,0)
+    datos = lt.newList("ARRAY_LIST")
+    analyzer["s_req3"] =  prim.PrimMST(analyzer["connections_o_hash"],numero_base)
+    for i in lt.iterator(sublista1):
+            numero = i   
+            espacio = prim.scan(analyzer["connections_o_comp"],analyzer['s_req3'],numero)
+            if espacio != math.inf:
+                    pila =  prim.edgesMST(analyzer["s_req3"],numero)
+                    distancia_total += espacio
+                   
+
+                    centinela = st.isEmpty(pila)
+                    while centinela == False:
+                        numero1 = st.pop(pila)
+                        if lt.isPresent(datos,numero1) == 0:
+                            lt.addLast(datos,numero1)
+                        centinela = st.isEmpty(pila)
+                    
+
+
+    return  analyzer["s_req3"]
+
+def req_4(analyzer, M):
+    """
+    Función que soluciona el requerimiento 4
+    """
+    # TODO: Realizar el requerimiento 4
+    identifyu = lt.newList("ARRAY_LIST")
+    lista = lt.newList("ARRAY_LIST")
+    lista1 = lt.newList("ARRAY_LIST")
+    d = {
+    }
+    for i in lt.iterator(analyzer["lista_presentacion_comparendos"]):
+        if i["VERTICES"] not in d:
+            d[i["VERTICES"]] = [i["TIPO_SERVICIO"], i["INFRACCION"]]
+        else:
+            # Hallar el comparendo mas grave
+            if organizar_mayor_comp(d[i["VERTICES"]], [i["TIPO_SERVICIO"], i["INFRACCION"]]) == False:
+                d[i["VERTICES"]] = [i["TIPO_SERVICIO"], i["INFRACCION"]]
+            
+    for i in d.keys():
+        l = {"vertice" : i,
+             "mayor_comp" : d[i]
+             }
+        lt.addLast(lista,l)
+    
+    y = merg.sort(lista,sort_criteria_2)
+    sublista = lt.subList(y,1,M)
+    
+    for i in lt.iterator(sublista):
+        lt.addLast(lista1,i["vertice"])
+    sublista1 = lt.subList(lista1,0,M)    
+    sublista1 = sublista1
+    distancia_total = 0
+    numero = None
+    numero_anterior_lista = None
+    for i in lt.iterator(sublista1):
+        if type(i) != int:
+            numero = i
+            if numero_anterior_lista ==None:
+                numero_anterior_lista =  numero
+            else:
+                analyzer["s_req4"] =  djk.Dijkstra(analyzer["connections_o_hash"],numero_anterior_lista)
+                if djk.hasPathTo(analyzer['s_req4'],numero) == True:
+                    pila =  djk.pathTo(analyzer["s_req4"],numero)
+                    datos,d = distancia_secuencia(analyzer["connections_o_hash"],pila)
+                    distancia_total += d
+                    for y in lt.iterator(datos):
+                        o = lt.isPresent(sublista1,y)
+                        lt.addLast(identifyu,y)
+                        if o != 0:
+                            lt.changeInfo(sublista1,o,0)
+                    
+        numero_anterior_lista =  numero
+
+    return  analyzer["s_req4"]
+
+def req_5(analyzer, M, vehiculo):
+    """
+    Función que soluciona el requerimiento 5
+    """
+    # TODO: Realizar el requerimiento 5
+    identifyu = lt.newList("ARRAY_LIST")
+    lista = lt.newList("ARRAY_LIST")
+    lista1 = lt.newList("ARRAY_LIST")
+    d = {
+    }
+    for i in lt.iterator(analyzer["lista_presentacion_comparendos"]):
+        if i["CLASE_VEHICULO"] == vehiculo:
             if i["VERTICES"] not in d:
                 d[i["VERTICES"]] = 1
             else:
@@ -411,9 +521,9 @@ def req_3(analyzer, localidad, M):
             if numero_anterior_lista ==None:
                 numero_anterior_lista =  numero
             else:
-                analyzer["s_req3"] =  djk.Dijkstra(analyzer["connections_o_hash"],numero_anterior_lista)
-                if djk.hasPathTo(analyzer['s_req3'],numero) == True:
-                    pila =  djk.pathTo(analyzer["s_req3"],numero)
+                analyzer["s_req5"] =  djk.Dijkstra(analyzer["connections_o_hash"],numero_anterior_lista)
+                if djk.hasPathTo(analyzer['s_req5'],numero) == True:
+                    pila =  djk.pathTo(analyzer["s_req5"],numero)
                     datos,d = distancia_secuencia(analyzer["connections_o_hash"],pila)
                     distancia_total += d
                     for y in lt.iterator(datos):
@@ -424,34 +534,7 @@ def req_3(analyzer, localidad, M):
                     
         numero_anterior_lista =  numero
 
-    return  analyzer["s_req3"]
-
-def req_4(data_structs):
-    """
-    Función que soluciona el requerimiento 4
-    """
-    # TODO: Realizar el requerimiento 4
-    pass
-
-
-def req_5(analyzer):
-    """
-    Función que soluciona el requerimiento 5
-    """
-    # TODO: Realizar el requerimiento 5
-    menor_lat = 100
-    mayor_lat = 0 
-    menor_long = 100
-    mayor_long = 0 
-    for i in lt.iterator(analyzer["lista_presentacion_comparendos"]):
-        if i["LATITUD"] > mayor_lat:
-            mayor_lat = i["LATITUD"]
-        if i["LATITUD"] < menor_lat:
-            menor_lat = i["LATITUD"]
-        if i["LONGITUD"] > mayor_long:
-            mayor_long = i["LONGITUD"]
-        if i["LONGITUD"] < menor_long:
-            menor_long = i["LONGITUD"]
+    return  analyzer["s_req5"]
     
 
 
@@ -536,7 +619,57 @@ def sort_criteria(data_1, data_2):
 
     return data_1["n_comparendos"] > data_2["n_comparendos"]
 
+def organizar_mayor_comp(data_1, data_2):
+    """sortCriteria criterio de ordenamiento para las funciones de ordenamiento
 
+    Args:
+        data1 (_type_): _description_
+        data2 (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+    #TODO: Crear función comparadora para ordenar
+    if data_1[0] == "Oficial" and (data_2[0] == "Público" or data_2[0] == "Particular"):
+        return True
+    elif data_1[0] == "Público" and data_2[0] == "Particular":
+        return True
+    elif data_1[0] == "Particular" and (data_2[0] == "Público" or data_2[0] == "Oficial"):
+        return False
+    elif data_1[0] == "Público" and data_2[0] == "Oficial":
+        return False
+    elif (data_1[0] == "Oficial" and data_2[0] == "Oficial") or (data_1[0] == "Particular" and data_2[0] == "Particular") or (data_1[0] == "Público" and data_2[0] == "Público"):
+        if data_1[1] >= data_2[1]:
+            return True
+        elif data_1[1] < data_2[1]:
+            return False
+        
+def sort_criteria_2(data_1, data_2):
+    """sortCriteria criterio de ordenamiento para las funciones de ordenamiento
+
+    Args:
+        data1 (_type_): _description_
+        data2 (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+    #TODO: Crear función comparadora para ordenar
+    data_1 = data_1["mayor_comp"]
+    data_2 = data_2["mayor_comp"]
+    if data_1[0] == "Oficial" and (data_2[0] == "Público" or data_2[0] == "Particular"):
+        return True
+    elif data_1[0] == "Público" and data_2[0] == "Particular":
+        return True
+    elif data_1[0] == "Particular" and (data_2[0] == "Público" or data_2[0] == "Oficial"):
+        return False
+    elif data_1[0] == "Público" and data_2[0] == "Oficial":
+        return False
+    elif (data_1[0] == "Oficial" and data_2[0] == "Oficial") or (data_1[0] == "Particular" and data_2[0] == "Particular") or (data_1[0] == "Público" and data_2[0] == "Público"):
+        if data_1[1] >= data_2[1]:
+            return True
+        elif data_1[1] < data_2[1]:
+            return False
 
 def sort(data_structs):
     """
