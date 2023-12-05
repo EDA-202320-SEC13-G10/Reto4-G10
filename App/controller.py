@@ -36,7 +36,8 @@ def new_controller():
     Crea una instancia del modelo
     """
     #TODO: Llamar la función del modelo que crea las estructuras de datos
-    pass
+    analyzer = model.new_data_structs()
+    return analyzer
 
 
 # Funciones para la carga de datos
@@ -46,10 +47,58 @@ def load_data(control, filename):
     Carga los datos del reto
     """
     # TODO: Realizar la carga de datos
-    pass
+    load_Vertices(control, filename)
+    load_estacion (control, filename)
+    load_comparendos(control,filename)
+    load_Arcos(control, filename)
+    return control
+    
+def load_Vertices(control, filename):
+    """
+    Carga los datos del reto
+    """
+    # TODO: Realizar la carga de datos
+    centinela = True
 
+    with open(filename) as f:
+        while centinela:
+            vertice = f.readline()
+            if not vertice:
+                centinela = False
+            else:
+                vertice = vertice.split(",")
+                model.add_verices(control,vertice)
+    f.close()
 
 # Funciones de ordenamiento
+def load_Arcos(control, filename):
+    centinela = True
+    
+    with open(filename) as f:
+        arcos = f.readline()
+        arcos = f.readline()
+        while centinela:
+            arcos = f.readline()
+            if not arcos:
+                centinela = False
+            else:
+                vertice = vertice.split()
+                model.add_data(control,vertice)
+    f.close()
+
+def load_estacion (control, filename):
+    f = open(filename , "r")
+    data = json.loads(f.read())
+    for i in data["features"]:
+        model.addEstacion(control,i)
+    f.close()
+
+def load_comparendos(control,filename):
+    f = open(filename , "r")
+    data = json.loads(f.read())
+    for i in data["features"]:
+        model.addEstacion(control,i)
+    f.close()
 
 def sort(control):
     """

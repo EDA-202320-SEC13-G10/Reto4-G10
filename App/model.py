@@ -62,10 +62,111 @@ def new_data_structs():
     manera vacía para posteriormente almacenar la información.
     """
     #TODO: Inicializar las estructuras de datos
-    pass
+    try:
+        analyzer = {
+            "arcos" : None,
+            "vertices" : None,
+            "connections" : None,
+            "comparendos": None,
+            "mapDatos": None,
+            "lista_presentacion_estaccion": None,
+            "lista_presentacion_comparendos": None,
+        }
+        analyzer['connections'] = gr.newGraph(datastructure='ADJ_LIST',
+                                              directed=True,
+                                              size=456091)
+        analyzer["mapDatos"] = om.newMap()
+        analyzer["lista_presentacion_estaccion"] = lt.newList()
+        analyzer["lista_presentacion_comparendos"] = lt.newList()
+       
+    except Exception as exp:
+        error.reraise(exp, 'model:newAnalyzer')
+
+    return analyzer
 
 
 # Funciones para agregar informacion al modelo
+def add_verices(analyzer, ticket):
+    """
+    Funcion que crea los vertices y agrega las estaciones
+    al hash para hacer mas facil su recorrido
+    """
+    id_Estacion = ticket[0]
+
+    lat = ticket[2]
+    long = ticket[1]
+    entry = om.get(analyzer["mapDatos"],id_Estacion)
+    if entry is None:
+        estacion_entry = new_Estacion(float(lat),float(long))
+        om.put(analyzer["mapDatos"],id_Estacion,estacion_entry)
+    
+    if not gr.containsVertex(analyzer['connections'],id_Estacion):
+        gr.insertVertex(analyzer['connections'],id_Estacion)
+    return analyzer
+
+def addConnection(analyzer,ltsConennctions):
+
+    """añade los arcos entre las etaciones y calcula la distancia Haversine atravez de un map con las id de las estaciones y su lat y long"""
+    tamanio = len(ltsConennctions)
+    for i in range(0,tamanio):  
+        if i+1 < tamanio:
+            initial = ltsConennctions[i]
+            final = ltsConennctions[i+1] 
+            edge = gr.getEdge(analyzer["connections"],initial,final)
+             
+            if edge is None:
+                valor_i = (om.get(analyzer["mapDatos"],initial))["value"]
+                valor_f = (om.get(analyzer["mapDatos"],final))["value"]
+                h_initial =valor_i["ubi"] 
+                h_final = valor_f["ubi"]
+                hsn = haversine(h_initial,h_final)
+                edge = gr.addEdge(analyzer["connections"],initial,final,hsn)
+                n_comparendos = valor_i["Numeros_comparendos"] + valor_f["Numeros_comparendos"]
+                edge = gr.addEdge(analyzer["connections"],final,initial,n_comparendos)
+    return analyzer
+
+def addEstacion(analyzer, estacion):
+    entry = om.get(analyzer["mapDatos"],estacion["properties"]["OBJECTID"])
+    if entry is None:
+        lat = estacion["geometry"]["coordinates"][1]
+        long = estacion["geometry"]["coordinates"][0]
+        estacion_entry = new_Estacion(float(lat),float(long))
+        om.put(analyzer["mapDatos"],estacion["properties"]["OBJECTID"],estacion_entry)
+    else:
+        entry["value"]["propiedades"] = estacion["properties"]
+    return analyzer
+
+def addComparendos(analyzer,comparendo):
+    keys = om.keySet(analyzer["mapDatos"])
+    comparendo = comparendo["properties"]
+    distancia = None
+    id_menor = None
+    
+    for key in lt.iterator(keys):
+        valor = om.get(analyzer["mapDatos"],key)
+        h_valor = valor["ubi"]
+        h_comparendo = ( comparendo["properties"]["LATITUD"] , comparendo["properties"]["LONGITUD"] )
+        haversine_nuevo  =haversine(h_valor,h_comparendo)
+        if distancia == None:
+            distancia = haversine_nuevo
+            id_menor = key
+        else:
+            if distancia > haversine_nuevo:
+                distancia = haversine_nuevo
+                id_menor = key
+    valor = om.get(analyzer["mapDatos"],id_menor)
+    valor["value"]["Numeros_comparendos"] += 1
+    lt.addLast(valor["value"]["comparendos"],comparendo["properties"])
+
+
+def new_Estacion(lat,long):
+    entry = {
+        "ubi" : (lat,long),
+        "propiedades" : None,
+        "comparendos" : lt.newList(),
+        "Numeros_comparendos" : 0
+    }
+    return entry
 
 def add_data(data_structs, data):
     """
