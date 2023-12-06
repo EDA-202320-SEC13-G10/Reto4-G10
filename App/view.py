@@ -32,6 +32,8 @@ from DISClib.DataStructures import mapentry as me
 assert cf
 from tabulate import tabulate
 import traceback
+import folium as fol
+import webbrowser
 
 """
 La vista se encarga de la interacción con el usuario
@@ -76,7 +78,6 @@ def load_data(control):
 
 
 
-11
 def print_data(control, id):
     """
         Función que imprime un dato dado su ID
@@ -90,19 +91,38 @@ def print_req_1(control):
     """
     
     # TODO: Imprimir el resultado del requerimiento 1
-    v_i = controller.req_1(control,20)
-    print(v_i)
+    print("Req No. 1 Input".center(130,"="))
+
+    lat_i =  float(input("Latitud inicial: "))
+    long_i =  float(input("Longitud inicial: "))
+    lat_f =  float(input("Latitud final: "))
+    long_f =  float(input("Longitud final: "))
+
+    datos,d, size, vertice_i, vertice_f = controller.req_1(control,lat_i,long_i,lat_f,long_f)
+    print(("Total distancia: " +str(d)+ " entre el vertice "+ vertice_i +" y el vertice "+ vertice_f))
+    print(("El total de los vertices en el camino " +str(size)))
+    print(("El total de seccuencia de los vertices: vvvv "))
+    print(datos)
     
 
 
 def print_req_2(control):
-    """1
-    111
-
+    """
         Función que imprime la solución del Requerimiento 2 en consola
     """
     # TODO: Imprimir el resultado del requerimiento 2
-    pass
+    print("Req No. 2 Input".center(130,"="))
+
+    lat_i =  float(input("Latitud inicial: "))
+    long_i =  float(input("Longitud inicial: "))
+    lat_f =  float(input("Latitud final: "))
+    long_f =  float(input("Longitud final: "))
+
+    datos,d, size, vertice_i, vertice_f = controller.req_2(control,lat_i,long_i,lat_f,long_f)
+    print(("Total distancia: " +str(d)+ " entre el vertice "+ vertice_i +" y el vertice "+ vertice_f))
+    print(("El total de los vertices en el camino " +str(size)))
+    print(("El total de seccuencia de los vertices: vvvv "))
+    print(datos)
 
 
 def print_req_3(control):
@@ -110,7 +130,19 @@ def print_req_3(control):
         Función que imprime la solución del Requerimiento 3 en consola
     """
     # TODO: Imprimir el resultado del requerimiento 3
-    pass
+    print("Req No. 3 Input".center(130,"="))
+
+    localidad =  (input("localidad inicial: "))
+    m =  int(input("Numero de camaras a instalar: "))
+
+
+    tamanio,v,distancia_total,precio = controller.req_3(control,localidad, m)
+
+    print(("El total de los vertices en el camino " +str(tamanio) + "en la localidad de " + str(localidad)))
+    print(("El total de seccuencia de los vertices: vvvv "))
+    print(v)
+    print(("Kilometros recorridos" + str(distancia_total)))
+    print(("El costo total de la instalacion es:" + str(precio)))
 
 
 def print_req_4(control):
@@ -118,7 +150,17 @@ def print_req_4(control):
         Función que imprime la solución del Requerimiento 4 en consola
     """
     # TODO: Imprimir el resultado del requerimiento 4
-    pass
+    print("Req No. 4 Input".center(130,"="))
+
+    m =  int(input("Numero de camaras a instalar: "))
+
+    tamanio,v,distancia_total,precio = controller.model.req_4(control, m)
+
+    print(("El total de los vertices en el camino " +str(tamanio)+ " con mayor gravedad de comparendos"))
+    print(("El total de seccuencia de los vertices: vvvv "))
+    print(v)
+    print(("Kilometros recorridos" + str(distancia_total)))
+    print(("El costo total de la instalacion es:" + str(precio)))
 
 
 def print_req_5(control):
@@ -126,7 +168,18 @@ def print_req_5(control):
         Función que imprime la solución del Requerimiento 5 en consola
     """
     # TODO: Imprimir el resultado del requerimiento 5
-    pass
+    print("Req No. 5 Input".center(130,"="))
+
+    m =  int(input("Numero de camaras a instalar: "))
+    vehiculo = input("Clase de vehiculo: ")
+    
+    tamanio,v,distancia_total,precio = controller.model.req_5(control, m, vehiculo)
+
+    print(("El total de los vertices en el camino " +str(tamanio)+ " con mayor gravedad de comparendos"))
+    print(("El total de seccuencia de los vertices: vvvv "))
+    print(v)
+    print(("Kilometros recorridos" + str(distancia_total)))
+    print(("El costo total de la instalacion es:" + str(precio)))
 
 
 def print_req_6(control):
@@ -142,7 +195,21 @@ def print_req_7(control):
         Función que imprime la solución del Requerimiento 7 en consola
     """
     # TODO: Imprimir el resultado del requerimiento 7
-    pass
+    print("Req No. 7 Input".center(130,"="))
+
+    lat_i =  float(input("Latitud inicial: "))
+    long_i =  float(input("Longitud inicial: "))
+    lat_f =  float(input("Latitud final: "))
+    long_f =  float(input("Longitud final: "))
+
+    tamanio ,datos,muestra,n_comaprendos, distancia = controller.req_7(control,lat_i,long_i,lat_f,long_f)
+    print(("El total de los vertices en el camino " +str(tamanio)))
+    print(("El total de seccuencia de los vertices: vvvv "))
+    print(datos)
+    print(("El total de seccuencia de los arcos: vvvv "))
+    print(muestra)
+    print(("El total de comparendos es " +str(n_comaprendos)))
+    print(("Kilometros recorridos" + str(distancia)))
 
 
 def print_req_8(control):
@@ -150,7 +217,32 @@ def print_req_8(control):
         Función que imprime la solución del Requerimiento 8 en consola
     """
     # TODO: Imprimir el resultado del requerimiento 8
-    pass
+    mapa = fol.Map(location=[4.656931, -74.050868], zoom_start=13)
+
+# Añadir una capa de Google Maps
+    fol.TileLayer('https://maps.googleapis.com/maps/api/staticmap?center={0},{1}&zoom={2}&scale={3}&size={4}x{4}&maptype={5}&format={6}&visual_refresh={7}&key={8}',
+                 attr='Google',
+                 subdomains=['mt0', 'mt1', 'mt2', 'mt3'],
+                 min_zoom=0,
+                 max_zoom=23,
+                 bounds=True,
+                 origin='upper'
+                 ).add_to(mapa)
+
+
+# Se crea el controlador asociado a la vista
+    control = new_controller()
+    valores = control["mapDatos"]
+    for i in lt.iterator(mp.keySet(valores)):
+        valor = mp.get(valores,i)
+        tupla = valor["value"]["ubi"]
+        fol.Marker(
+                location=tupla,
+                icon=fol.Icon(icon="cloud",color="green"),
+            ).add_to(mapa)
+    
+    mapa.save("footprint.html")
+    webbrowser.open("footprint.html")
 
 
 # Se crea el controlador asociado a la vista

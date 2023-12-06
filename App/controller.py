@@ -117,44 +117,44 @@ def get_data(control, id):
     pass
 
 
-def req_1(control,m):
+def req_1(control, lat_i, long_i, lat_f, long_f):
     """
     Retorna el resultado del requerimiento 1
     """
     # TODO: Modificar el requerimiento 1
-    return model.req_6(control,m)
+    return model.req_1(control, lat_i, long_i, lat_f, long_f)
 
 
-def req_2(control):
+def req_2(control, lat_i, long_i, lat_f, long_f):
     """
     Retorna el resultado del requerimiento 2
     """
     # TODO: Modificar el requerimiento 2
-    pass
+    return model.req_2(control, lat_i, long_i, lat_f, long_f)
 
 
-def req_3(control):
+def req_3(control, localidad, M):
     """
     Retorna el resultado del requerimiento 3
     """
     # TODO: Modificar el requerimiento 3
-    pass
+    return model.req_3(control, localidad, M)
 
 
-def req_4(control):
+def req_4(control, M):
     """
     Retorna el resultado del requerimiento 4
     """
     # TODO: Modificar el requerimiento 4
-    pass
+    return model.req_4(control, M)
 
 
-def req_5(control):
+def req_5(control, M, vehiculo):
     """
     Retorna el resultado del requerimiento 5
     """
     # TODO: Modificar el requerimiento 5
-    pass
+    return model.req_5(control, M, vehiculo)
 
 def req_6(control):
     """
@@ -164,12 +164,12 @@ def req_6(control):
     pass
 
 
-def req_7(control):
+def req_7(control, lat_i, long_i, lat_f, long_f):
     """
     Retorna el resultado del requerimiento 7
     """
     # TODO: Modificar el requerimiento 7
-    pass
+    return model.req_7(control,lat_i,long_i,lat_f,long_f)
 
 
 def req_8(control):
@@ -178,6 +178,7 @@ def req_8(control):
     """
     # TODO: Modificar el requerimiento 8
     pass
+    # Presente unicamente en el view.py
 
 
 # Funciones para medir tiempos de ejecucion

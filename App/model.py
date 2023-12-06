@@ -48,6 +48,7 @@ from DISClib.Algorithms.Sorting import mergesort as merg
 from DISClib.Algorithms.Sorting import quicksort as quk
 from DISClib.Utils import error as error
 from haversine import haversine, Unit
+import math
 
 assert cf
 
@@ -82,7 +83,9 @@ def new_data_structs():
             "s_req2": None,
             "s_req3": None,
             "s_req4": None,
-            "s_req5": None
+            "s_req5": None,
+            "req_6": None,
+            "req_7": None
         }
         analyzer['connections'] = gr.newGraph(datastructure='ADJ_LIST',
                                               directed=True,
@@ -358,7 +361,8 @@ def req_1(analyzer,lat_i,long_i,lat_f,long_f):
         pila =  bfs.pathTo(analyzer["s_req1"],vertice_f)
     datos,d = distancia_secuencia(analyzer["connections"],pila)
     size = lt.size(datos)
-    return datos,d, size
+
+    return datos,d, size, vertice_i, vertice_f
 
 def req_2(analyzer,lat_i,long_i,lat_f,long_f):
     """
@@ -368,10 +372,10 @@ def req_2(analyzer,lat_i,long_i,lat_f,long_f):
     vertice_i, vertice_f= vertices_mas_cercanos(analyzer["mapDatos"],lat_i,long_i,lat_f,long_f)
     analyzer["s_req2"] =  bfs.BreathFirstSearch(analyzer["connections"],vertice_i)
     if bfs.hasPathTo(analyzer['s_req2'],vertice_f) == True:
-        pila =  bfs.pathTo(analyzer["s_req1"],vertice_f)
+        pila =  bfs.pathTo(analyzer["s_req2"],vertice_f)
     datos,d = distancia_secuencia(analyzer["connections"],pila)
     size = lt.size(datos)
-    return datos,d, size
+    return datos,d, size, vertice_i, vertice_f
     
 def req_3(analyzer, localidad, M):
     """
@@ -383,7 +387,7 @@ def req_3(analyzer, localidad, M):
     d = {
     }
     for i in lt.iterator(analyzer["lista_presentacion_comparendos"]):
-        if i["LOCALIDAD"] == localidad:
+        if i["LOCALIDAD"].lower() == localidad.lower():
             if i["VERTICES"] not in d:
                 d[i["VERTICES"]] = 1
             else:
@@ -397,11 +401,11 @@ def req_3(analyzer, localidad, M):
     
 
     y = merg.sort(lista,sort_criteria)
-    sublista = lt.subList(y,0,M)
+    sublista = lt.subList(y,1,M)
     
     for i in lt.iterator(sublista):
         lt.addLast(lista1,i["vertice"])
-    sublista1 = lt.subList(lista1,0,M)    
+    sublista1 = lt.subList(lista1,1,M)    
     distancia_total = 0
     numero = None
     numero_base = lt.getElement(sublista1,0)
@@ -424,7 +428,7 @@ def req_3(analyzer, localidad, M):
                     
 
 
-    return  analyzer["s_req3"]
+    return  M, gr.vertices(analyzer["s_req3"]), distancia_total, distancia_total*1000000
 
 def req_4(analyzer, M):
     """
@@ -455,31 +459,31 @@ def req_4(analyzer, M):
     
     for i in lt.iterator(sublista):
         lt.addLast(lista1,i["vertice"])
-    sublista1 = lt.subList(lista1,0,M)    
-    sublista1 = sublista1
+    sublista1 = lt.subList(lista1,1,M)    
     distancia_total = 0
     numero = None
-    numero_anterior_lista = None
+    numero_base = lt.getElement(sublista1,0)
+    datos = lt.newList("ARRAY_LIST")
+    analyzer["s_req4"] =  prim.PrimMST(analyzer["connections_o_hash"],numero_base)
     for i in lt.iterator(sublista1):
-        if type(i) != int:
-            numero = i
-            if numero_anterior_lista ==None:
-                numero_anterior_lista =  numero
-            else:
-                analyzer["s_req4"] =  djk.Dijkstra(analyzer["connections_o_hash"],numero_anterior_lista)
-                if djk.hasPathTo(analyzer['s_req4'],numero) == True:
-                    pila =  djk.pathTo(analyzer["s_req4"],numero)
-                    datos,d = distancia_secuencia(analyzer["connections_o_hash"],pila)
-                    distancia_total += d
-                    for y in lt.iterator(datos):
-                        o = lt.isPresent(sublista1,y)
-                        lt.addLast(identifyu,y)
-                        if o != 0:
-                            lt.changeInfo(sublista1,o,0)
-                    
-        numero_anterior_lista =  numero
+            numero = i   
+            espacio = prim.scan(analyzer["connections_o_comp"],analyzer['s_req4'],numero)
+            if espacio != math.inf:
+                    pila =  prim.edgesMST(analyzer["s_req4"],numero)
+                    distancia_total += espacio
+                   
 
-    return  analyzer["s_req4"]
+                    centinela = st.isEmpty(pila)
+                    while centinela == False:
+                        numero1 = st.pop(pila)
+                        if lt.isPresent(datos,numero1) == 0:
+                            lt.addLast(datos,numero1)
+                        centinela = st.isEmpty(pila)
+                    
+
+
+    return  analyzer["s_req4"], M, gr.vertices(analyzer["s_req4"]), distancia_total, distancia_total*1000000
+
 
 def req_5(analyzer, M, vehiculo):
     """
@@ -492,7 +496,7 @@ def req_5(analyzer, M, vehiculo):
     d = {
     }
     for i in lt.iterator(analyzer["lista_presentacion_comparendos"]):
-        if i["CLASE_VEHICULO"] == vehiculo:
+        if i["CLASE_VEHICULO"].lower() == vehiculo.lower():
             if i["VERTICES"] not in d:
                 d[i["VERTICES"]] = 1
             else:
@@ -506,35 +510,35 @@ def req_5(analyzer, M, vehiculo):
     
 
     y = merg.sort(lista,sort_criteria)
-    sublista = lt.subList(y,0,M)
+    sublista = lt.subList(y,1,M)
     
     for i in lt.iterator(sublista):
         lt.addLast(lista1,i["vertice"])
-    sublista1 = lt.subList(lista1,0,M)    
-    sublista1 = sublista1
+    sublista1 = lt.subList(lista1,1,M)    
     distancia_total = 0
     numero = None
-    numero_anterior_lista = None
+    numero_base = lt.getElement(sublista1,0)
+    datos = lt.newList("ARRAY_LIST")
+    analyzer["s_req5"] =  prim.PrimMST(analyzer["connections_o_hash"],numero_base)
     for i in lt.iterator(sublista1):
-        if type(i) != int:
-            numero = i
-            if numero_anterior_lista ==None:
-                numero_anterior_lista =  numero
-            else:
-                analyzer["s_req5"] =  djk.Dijkstra(analyzer["connections_o_hash"],numero_anterior_lista)
-                if djk.hasPathTo(analyzer['s_req5'],numero) == True:
-                    pila =  djk.pathTo(analyzer["s_req5"],numero)
-                    datos,d = distancia_secuencia(analyzer["connections_o_hash"],pila)
-                    distancia_total += d
-                    for y in lt.iterator(datos):
-                        o = lt.isPresent(sublista1,y)
-                        lt.addLast(identifyu,y)
-                        if o != 0:
-                            lt.changeInfo(sublista1,o,0)
-                    
-        numero_anterior_lista =  numero
+            numero = i   
+            espacio = prim.scan(analyzer["connections_o_comp"],analyzer['s_req5'],numero)
+            if espacio != math.inf:
+                    pila =  prim.edgesMST(analyzer["s_req5"],numero)
+                    distancia_total += espacio
+                   
 
-    return  analyzer["s_req5"]
+                    centinela = st.isEmpty(pila)
+                    while centinela == False:
+                        numero1 = st.pop(pila)
+                        if lt.isPresent(datos,numero1) == 0:
+                            lt.addLast(datos,numero1)
+                        centinela = st.isEmpty(pila)
+                    
+
+
+    return  analyzer["s_req5"], M, gr.vertices(analyzer["s_req5"]), distancia_total, distancia_total*1000000
+
     
 
 
@@ -571,12 +575,44 @@ def req_6(analyzer,m):
     return quk.sort(u,compare)
 
 
-def req_7(data_structs):
+def req_7(analyzer,lat_i,long_i,lat_f,long_f):
     """
     Función que soluciona el requerimiento 7
     """
     # TODO: Realizar el requerimiento 7
-    pass
+    numero_ante = None
+
+    distancia_hash = 0
+    muestra = lt.newList("ARRAY_LIST")
+    datos = lt.newList("ARRAY_LIST")
+    n_comaprendos = 0
+    vertice_i, vertice_f= vertices_mas_cercanos(analyzer["mapDatos"],lat_i,long_i,lat_f,long_f)
+    analyzer["req_7"] = djk.Dijkstra(analyzer["connections_comp"],vertice_i)
+    if djk.hasPathTo(analyzer["req_7"],vertice_f):
+        req8 = djk.pathTo(analyzer["req_7"],vertice_f)
+        centinela = st.isEmpty(req8)
+        while centinela == False:
+                numero1 = st.pop(req8)
+                if numero_ante == None:
+                    numero_ante = numero1
+                    
+                else:
+                    arco = gr.getEdge(analyzer["connections_comp"],numero_ante,numero1)
+                    arc1 = gr.getEdge(analyzer["connections"],numero_ante,numero1)
+                    d = {
+                        "vertice_i" : numero_ante,
+                        "vertice_f" : numero1,
+                        "arco" : arco
+                    }
+                  
+                    distancia_hash += arc1
+                    lt.addLast(muestra,d)
+                lt.addLast(datos,numero1)
+                numero_ante = numero1 
+                centinela = st.isEmpty(req8)
+                n_comaprendos += lt.size((mp.get(analyzer["mapDatos"],numero1))["value"]["comparendos"])
+
+    return lt.size(datos),datos,muestra,n_comaprendos, distancia_hash
 
 
 def req_8(data_structs):
@@ -585,7 +621,7 @@ def req_8(data_structs):
     """
     # TODO: Realizar el requerimiento 8
     pass
-
+    # Presente unicamente el view.py
 
 # Funciones utilizadas para comparar elementos dentro de una lista
 
