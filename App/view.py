@@ -154,7 +154,7 @@ def print_req_4(control):
 
     m =  int(input("Numero de camaras a instalar: "))
 
-    tamanio,v,distancia_total,precio = controller.model.req_4(control, m)
+    tamanio,v,distancia_total,precio = controller.req_4(control, m)
 
     print(("El total de los vertices en el camino " +str(tamanio)+ " con mayor gravedad de comparendos"))
     print(("El total de seccuencia de los vertices: vvvv "))
@@ -173,7 +173,7 @@ def print_req_5(control):
     m =  int(input("Numero de camaras a instalar: "))
     vehiculo = input("Clase de vehiculo: ")
     
-    tamanio,v,distancia_total,precio = controller.model.req_5(control, m, vehiculo)
+    tamanio,v,distancia_total,precio = controller.req_5(control, m, vehiculo)
 
     print(("El total de los vertices en el camino " +str(tamanio)+ " con mayor gravedad de comparendos"))
     print(("El total de seccuencia de los vertices: vvvv "))
@@ -187,7 +187,17 @@ def print_req_6(control):
         Función que imprime la solución del Requerimiento 6 en consola
     """
     # TODO: Imprimir el resultado del requerimiento 6
-    pass
+    print("Req No. 6 Input".center(130,"="))
+
+    m =  int(input("Numero de camaras a instalar: "))
+    v_inicio = input("Clase de vehiculo: ")
+    
+    tamanio,v,distancia_total = controller.req_6(control, m, v_inicio)
+
+    print(("El total de los vertices en el camino " +str(tamanio)+ " con mayor gravedad de comparendos"))
+    print(("El total de seccuencia de los vertices: vvvv "))
+    print(v)
+    print(("Kilometros recorridos" + str(distancia_total)))
 
 
 def print_req_7(control):

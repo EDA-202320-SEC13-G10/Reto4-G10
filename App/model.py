@@ -426,16 +426,15 @@ def req_3(analyzer, localidad, M):
                             lt.addLast(datos,numero1)
                         centinela = st.isEmpty(pila)
                     
+    n, j = distancia_secuencia(analyzer["connections_o_hash"],pila)
 
-
-    return  M, gr.vertices(analyzer["s_req3"]), distancia_total, distancia_total*1000000
+    return  M, n, distancia_total, distancia_total*1000000
 
 def req_4(analyzer, M):
     """
     Función que soluciona el requerimiento 4
     """
     # TODO: Realizar el requerimiento 4
-    identifyu = lt.newList("ARRAY_LIST")
     lista = lt.newList("ARRAY_LIST")
     lista1 = lt.newList("ARRAY_LIST")
     d = {
@@ -480,9 +479,9 @@ def req_4(analyzer, M):
                             lt.addLast(datos,numero1)
                         centinela = st.isEmpty(pila)
                     
+    n, j = distancia_secuencia(analyzer["connections_o_hash"],pila)
 
-
-    return  analyzer["s_req4"], M, gr.vertices(analyzer["s_req4"]), distancia_total, distancia_total*1000000
+    return  M, n, distancia_total, distancia_total*1000000
 
 
 def req_5(analyzer, M, vehiculo):
@@ -490,7 +489,6 @@ def req_5(analyzer, M, vehiculo):
     Función que soluciona el requerimiento 5
     """
     # TODO: Realizar el requerimiento 5
-    identifyu = lt.newList("ARRAY_LIST")
     lista = lt.newList("ARRAY_LIST")
     lista1 = lt.newList("ARRAY_LIST")
     d = {
@@ -535,44 +533,69 @@ def req_5(analyzer, M, vehiculo):
                             lt.addLast(datos,numero1)
                         centinela = st.isEmpty(pila)
                     
+    n, j = distancia_secuencia(analyzer["connections_o_hash"],pila)
 
-
-    return  analyzer["s_req5"], M, gr.vertices(analyzer["s_req5"]), distancia_total, distancia_total*1000000
+    return  M, n, distancia_total, distancia_total*1000000
 
     
 
 
-def req_6(analyzer,m):
+def req_6(analyzer,M,v_inicio):
     """
     Función que soluciona el requerimiento 6
     """
     # TODO: Realizar el requerimiento 6
-    menor_lat = 100
-    mayor_lat = 0 
-    menor_long = 100
-    mayor_long = 0 
+    identifyu = lt.newList("ARRAY_LIST")
+    lista = lt.newList("ARRAY_LIST")
+    lista1 = lt.newList("ARRAY_LIST")
+    d = {
+    }
     for i in lt.iterator(analyzer["lista_presentacion_comparendos"]):
-        lat = float(i["LATITUD"])
-        long = abs(float(i["LONGITUD"]))
-        if  lat > mayor_lat:
-            mayor_lat = lat
-        if lat < menor_lat:
-            menor_lat = lat
-        if long > mayor_long:
-            mayor_long =long
-        if long < menor_long:
-            menor_long = long
-    y = analyzer["lista_presentacion_comparendos"]
-    l =["Público","Oficial","Particular"]
+        if i["VERTICES"] not in d:
+            d[i["VERTICES"]] = [i["TIPO_SERVICIO"], i["INFRACCION"]]
+        else:
+            # Hallar el comparendo mas grave
+            if organizar_mayor_comp(d[i["VERTICES"]], [i["TIPO_SERVICIO"], i["INFRACCION"]]) == False:
+                d[i["VERTICES"]] = [i["TIPO_SERVICIO"], i["INFRACCION"]]
+            
+    for i in d.keys():
+        l = {"vertice" : i,
+             "mayor_comp" : d[i]
+             }
+        lt.addLast(lista,l)
     
-    u = lt.newList()
-    for m in lt.iterator(y):
-        if m["TIPO_SERVICIO"] == l[0]:
-            lt.addLast(u,m)
-       
 
-
-    return quk.sort(u,compare)
+    y = merg.sort(lista,sort_criteria_2)
+    sublista = lt.subList(y,1,M)
+    
+    for i in lt.iterator(sublista):
+        lt.addLast(lista1,i["vertice"])
+    sublista1 = lt.subList(lista1,1,M)    
+    sublista1 = sublista1
+    distancia_total = 0
+    numero = None
+    numero_anterior_lista = None
+    for i in lt.iterator(sublista1):
+        if type(i) != int:
+            numero = i
+            if numero_anterior_lista ==None:
+                numero_anterior_lista =  v_inicio
+            else:
+                analyzer["req_6"] =  djk.Dijkstra(analyzer["connections_o_hash"],numero_anterior_lista)
+                if djk.hasPathTo(analyzer['req_6'],numero) == True:
+                    pila =  djk.pathTo(analyzer["req_6"],numero)
+                    datos,d = distancia_secuencia(analyzer["connections_o_hash"],pila)
+                    distancia_total += d
+                    for y in lt.iterator(datos):
+                        o = lt.isPresent(sublista1,y)
+                        lt.addLast(identifyu,y)
+                        if o != 0:
+                            lt.changeInfo(sublista1,o,0)
+                    
+        numero_anterior_lista =  numero
+        n, j = distancia_secuencia(analyzer["connections_o_hash"],pila)
+        
+    return  M, n, distancia_total
 
 
 def req_7(analyzer,lat_i,long_i,lat_f,long_f):
@@ -589,10 +612,10 @@ def req_7(analyzer,lat_i,long_i,lat_f,long_f):
     vertice_i, vertice_f= vertices_mas_cercanos(analyzer["mapDatos"],lat_i,long_i,lat_f,long_f)
     analyzer["req_7"] = djk.Dijkstra(analyzer["connections_comp"],vertice_i)
     if djk.hasPathTo(analyzer["req_7"],vertice_f):
-        req8 = djk.pathTo(analyzer["req_7"],vertice_f)
-        centinela = st.isEmpty(req8)
+        req7 = djk.pathTo(analyzer["req_7"],vertice_f)
+        centinela = st.isEmpty(req7)
         while centinela == False:
-                numero1 = st.pop(req8)
+                numero1 = st.pop(req7)
                 if numero_ante == None:
                     numero_ante = numero1
                     
@@ -609,7 +632,7 @@ def req_7(analyzer,lat_i,long_i,lat_f,long_f):
                     lt.addLast(muestra,d)
                 lt.addLast(datos,numero1)
                 numero_ante = numero1 
-                centinela = st.isEmpty(req8)
+                centinela = st.isEmpty(req7)
                 n_comaprendos += lt.size((mp.get(analyzer["mapDatos"],numero1))["value"]["comparendos"])
 
     return lt.size(datos),datos,muestra,n_comaprendos, distancia_hash
